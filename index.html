@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Spotify Overlay Integrated Style</title>
+    <title>Spotify Overlay Bold Solid</title>
     <style>
         /* Base: Arial Black en minúsculas */
         body { 
@@ -11,91 +11,88 @@
             text-transform: lowercase; 
         }
         
-        /* Contenedor Totalmente Integrado */
+        /* Contenedor SÓLIDO (Sin transparencia) */
         #overlay {
             display: flex;
             align-items: center;
-            background: rgba(15, 15, 15, 0.98); /* Negro casi total y sólido */
+            background: #0a0a0a; /* Negro sólido total */
             color: white;
             
-            /* TAMAÑO FIJO ESTRICTO */
-            width: 380px; /* Un poco más ancho para el texto más grande */
-            height: 100px; /* Un poco más alto */
+            /* TAMAÑO MÁS GRANDE */
+            width: 450px; 
+            height: 120px; 
             
-            /* BORDES Y SOMBRA (Solo redondeamos el lado derecho) */
-            border-radius: 0 12px 12px 0; 
-            box-shadow: 0 5px 20px rgba(0,0,0,0.6);
+            /* BORDES (Solo derecha) */
+            border-radius: 0 15px 15px 0; 
+            box-shadow: 10px 0 30px rgba(0,0,0,0.8);
             box-sizing: border-box;
             
-            /* Animación de entrada/salida (Scale In suave) */
+            /* Animación de entrada */
             transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             opacity: 0;
-            transform: scale(0.9);
-            transform-origin: left; /* Crece desde la portada */
+            transform: translateX(-50px);
         }
 
         #overlay.active { 
             opacity: 1; 
-            transform: scale(1); 
+            transform: translateX(0); 
         }
 
-        /* PORTADA DEL ALBUM (PEGADA A LA IZQUIERDA, SIN RECUADRO) */
+        /* PORTADA PEGADA AL INICIO */
         #album-art { 
-            width: 100px; /* Mismo alto que el contenedor para integrarse */
-            height: 100px; 
-            object-fit: cover; /* Asegura que la imagen cubra el cuadrado */
-            border-radius: 0; /* Sin bordes redondeados */
-            flex-shrink: 0; /* No se achica */
-            border-right: 3px solid #1DB954; /* Una línea verde de separación elegante */
+            width: 120px; /* Cubre todo el alto del contenedor */
+            height: 120px; 
+            object-fit: cover;
+            border-radius: 0; 
+            flex-shrink: 0;
+            border-right: 4px solid #1DB954; /* Separador verde Spotify */
         }
 
-        /* Contenedor de Información (Alineado con aire a la izquierda) */
+        /* Contenedor de Información */
         .info {
             flex-grow: 1;
             display: flex;
             flex-direction: column;
             justify-content: center;
             overflow: hidden;
-            padding: 0 15px; /* Un poco de aire */
-            width: calc(100% - 100px); /* Espacio restante */
+            padding: 0 20px;
+            width: calc(100% - 120px);
         }
 
-        /* --- Estilos para el Scroll Seamless NoBlur --- */
+        /* Máscara de Scroll */
         .scroll-mask {
             width: 100%;
             overflow: hidden;
             white-space: nowrap;
-            /* Máscara nítida a la izquierda, desvanecida a la derecha */
-            mask-image: linear-gradient(to right, black, black 90%, transparent);
-            -webkit-mask-image: linear-gradient(to right, black, black 90%, transparent);
+            mask-image: linear-gradient(to right, black 85%, transparent);
+            -webkit-mask-image: linear-gradient(to right, black 85%, transparent);
         }
 
-        /* Clase para el Scroll Seamless */
         .should-scroll {
             display: inline-block;
             animation: marquee 10s linear infinite;
         }
 
-        /* ARTISTA ARRIBA (Cian) - UN POCO MÁS GRANDE */
+        /* ARTISTA (CIAN) - MÁS GRANDE */
         #artist { 
-            font-size: 13px; /* Subido de 11px */
-            color: #2fb3a4; /* Cian Jack Stauber */
-            letter-spacing: 0.3px;
-            margin-bottom: 2px;
+            font-size: 16px; 
+            color: #2fb3a4;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
             display: block;
         }
         
-        /* TÍTULO ABAJO (Blanco) - UN POCO MÁS GRANDE */
+        /* TÍTULO (BLANCO) - MUCHO MÁS GRANDE */
         #title { 
-            font-size: 20px; /* Subido de 17px/18px */
+            font-size: 26px; 
             color: #ffffff;
             display: block;
+            line-height: 1.1;
         }
 
-        /* Animación de Marquesina (Scroll Seamless) */
         @keyframes marquee {
             0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); } /* Ajustado para el duplicado */
+            100% { transform: translateX(-50%); }
         }
     </style>
 </head>
@@ -103,19 +100,17 @@
 
     <div id="overlay">
         <img id="album-art" src="" alt="">
-        
         <div class="info">
             <div id="artist-mask" class="scroll-mask">
                 <div id="artist-container">
                     <span id="artist"></span>
-                    <span id="artist-repeat" style="margin-left: 40px; display: none;"></span>
+                    <span id="artist-repeat" style="margin-left: 50px; display: none;"></span>
                 </div>
             </div>
-            
             <div id="title-mask" class="scroll-mask">
                 <div id="title-container">
                     <span id="title"></span>
-                    <span id="title-repeat" style="margin-left: 40px; display: none;"></span>
+                    <span id="title-repeat" style="margin-left: 50px; display: none;"></span>
                 </div>
             </div>
         </div>
@@ -139,7 +134,6 @@
                             document.getElementById('artist').innerText = data.artist;
                             document.getElementById('album-art').src = data.albumImageUrl;
                             
-                            // Comprobar Scroll Seamless individualmente
                             checkAndSetScroll('title', data.title);
                             checkAndSetScroll('artist', data.artist);
 
@@ -161,28 +155,19 @@
             const repeatEl = document.getElementById(type + '-repeat');
             const textEl = document.getElementById(type);
             
-            // Limpiamos estado anterior
             container.classList.remove('should-scroll');
             repeatEl.style.display = 'none';
-            container.style.animationDuration = '10s'; 
 
-            // Medir el texto real con lowercase aplicado
             const canvas = document.createElement("canvas");
             const context = canvas.getContext("2d");
-            const computedStyle = window.getComputedStyle(textEl);
-            context.font = computedStyle.font;
+            context.font = window.getComputedStyle(textEl).font;
             const textWidth = context.measureText(text.toLowerCase()).width;
             
-            const availableWidth = mask.offsetWidth;
-
-            // Si el texto es más ancho que el espacio disponible (con un pequeño margen)
-            if (textWidth > (availableWidth - 5)) {
+            if (textWidth > (mask.offsetWidth - 10)) {
                 container.classList.add('should-scroll');
                 repeatEl.innerText = text;
                 repeatEl.style.display = 'inline-block';
-                
-                // Ajustar duración según largo del texto (más largo = más lento)
-                const duration = Math.max(9, textWidth / 22);
+                const duration = Math.max(8, textWidth / 25);
                 container.style.animationDuration = duration + 's';
             }
         }
