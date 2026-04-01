@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Spotify Overlay 2-Line Limit</title>
+    <title>Spotify Overlay Fixed G</title>
     <style>
         body { 
             margin: 0; padding: 0; overflow: hidden; 
@@ -54,11 +54,11 @@
             flex-direction: column;
             justify-content: center;
             padding: 0 20px;
+            /* FIX: Padding inferior para que no se corte la 'g' */
+            padding-bottom: 8px; 
             transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease-in-out;
             opacity: 0;
             transform: translateX(50px);
-            /* Aseguramos que la info no se desborde del alto */
-            max-height: 100%;
             overflow: hidden;
         }
 
@@ -72,19 +72,19 @@
             display: block;
             white-space: nowrap;
             overflow: hidden;
-            text-overflow: ellipsis; /* Puntos suspensivos si el artista es muy largo */
+            text-overflow: ellipsis;
         }
         
-        /* --- CLAMPING DE 2 LÍNEAS PARA EL TÍTULO --- */
         .title-text { 
-            font-size: 28px; /* Ajustado para que 2 líneas quepan bien */
+            font-size: 28px; 
             color: #ffffff;
-            line-height: 1.1;
+            /* FIX: line-height ajustado para que bajen las colas de las letras */
+            line-height: 1.2; 
             display: -webkit-box;
-            -webkit-line-clamp: 2; /* Límite de 2 líneas */
+            -webkit-line-clamp: 2; 
             -webkit-box-orient: vertical;  
             overflow: hidden;
-            text-overflow: ellipsis; /* Añade los "..." automáticamente */
+            text-overflow: ellipsis;
         }
 
     </style>
