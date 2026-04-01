@@ -2,68 +2,66 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Spotify Overlay Square</title>
+    <title>Spotify Overlay Compact</title>
     <style>
-        /* Fuente y Reset */
-        body { margin: 0; padding: 0; overflow: hidden; font-family: 'Arial Black', Gadget, sans-serif; }
+        /* Estilos Base */
+        body { margin: 0; padding: 0; overflow: hidden; font-family: 'Arial Black', sans-serif; }
         
-        /* Contenedor Cuadrado Fijo */
+        /* Contenedor Rectangular Fijo (Estilo nowplaying.site) */
         #overlay {
             display: flex;
-            flex-direction: column;
             align-items: center;
-            justify-content: center;
             background: rgba(0, 0, 0, 0.85);
             color: white;
-            width: 200px;  /* Ancho fijo */
-            height: 200px; /* Alto fijo (Cuadrado) */
-            padding: 15px;
-            border-radius: 20px;
-            border-bottom: 6px solid #1DB954;
+            width: 350px;  /* Ancho Fijo */
+            height: 80px;  /* Alto Fijo */
+            padding: 10px;
+            border-radius: 12px;
+            border-left: 6px solid #1DB954;
             box-sizing: border-box;
+            gap: 15px;
             
-            /* Animación de entrada */
-            transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            /* Animación de entrada/salida */
+            transition: all 0.5s ease-in-out;
             opacity: 0;
-            transform: scale(0.8); /* Efecto de zoom in */
+            transform: translateX(-20px);
         }
 
         #overlay.active { 
             opacity: 1; 
-            transform: scale(1); 
+            transform: translateX(0); 
         }
 
-        /* Imagen del Album */
+        /* Arte del Disco */
         #album-art { 
-            width: 80px; 
-            height: 80px; 
-            border-radius: 10px; 
-            margin-bottom: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            width: 60px; 
+            height: 60px; 
+            border-radius: 8px; 
+            flex-shrink: 0; /* Que no se achique */
         }
 
-        /* Contenedor del Texto (El secreto de la marquesina) */
-        .text-container {
-            width: 100%;
+        /* Contenedor de Texto con Máscara para el Scroll */
+        .text-mask {
+            flex-grow: 1;
             overflow: hidden;
-            text-align: center;
-            position: relative;
-        }
-
-        .scroll-text {
-            display: inline-block;
             white-space: nowrap;
-            padding-left: 100%; /* Empieza fuera a la derecha */
-            animation: marquee 10s linear infinite;
+            mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+            -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
         }
 
-        #title { font-size: 16px; display: block; margin-bottom: 2px; text-transform: uppercase; }
-        #artist { font-size: 12px; opacity: 0.8; font-family: 'Arial', sans-serif; font-weight: bold; }
+        .scroll-content {
+            display: inline-block;
+            padding-left: 20px;
+            animation: marquee 12s linear infinite;
+        }
+
+        #title { font-size: 15px; text-transform: uppercase; margin-right: 10px; }
+        #artist { font-size: 12px; opacity: 0.7; font-family: Arial, sans-serif; font-weight: bold; }
 
         /* Animación de Marquesina */
         @keyframes marquee {
-            0% { transform: translate(0, 0); }
-            100% { transform: translate(-100%, 0); }
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
         }
     </style>
 </head>
@@ -71,10 +69,12 @@
 
     <div id="overlay">
         <img id="album-art" src="" alt="">
-        <div class="text-container">
-            <div class="scroll-text">
+        <div class="text-mask">
+            <div id="scroll-wrapper" class="scroll-content">
                 <span id="title"></span>
                 <span id="artist"></span>
+                <span id="title-repeat" style="margin-left: 40px;"></span>
+                <span id="artist-repeat"></span>
             </div>
         </div>
     </div>
@@ -93,8 +93,15 @@
                         widget.classList.remove('active');
                         
                         setTimeout(() => {
-                            document.getElementById('title').innerText = data.title;
-                            document.getElementById('artist').innerText = " — " + data.artist;
+                            const fullTitle = data.title;
+                            const fullArtist = " — " + data.artist;
+
+                            // Actualizamos original y repetición para el scroll infinito
+                            document.getElementById('title').innerText = fullTitle;
+                            document.getElementById('artist').innerText = fullArtist;
+                            document.getElementById('title-repeat').innerText = fullTitle;
+                            document.getElementById('artist-repeat').innerText = fullArtist;
+                            
                             document.getElementById('album-art').src = data.albumImageUrl;
                             widget.classList.add('active');
                         }, 600);
@@ -105,7 +112,7 @@
                     widget.classList.remove('active');
                     lastTrack = "";
                 }
-            } catch (e) { console.log("Buscando señal..."); }
+            } catch (e) { console.log("Reconectando..."); }
         }
 
         setInterval(update, 5000);
