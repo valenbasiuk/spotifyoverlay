@@ -2,53 +2,37 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Spotify Overlay Bold Solid</title>
+    <title>Spotify Overlay Fixed Scroll</title>
     <style>
-        /* Base: Arial Black en minúsculas */
         body { 
             margin: 0; padding: 0; overflow: hidden; 
             font-family: 'Arial Black', sans-serif; 
             text-transform: lowercase; 
         }
         
-        /* Contenedor SÓLIDO (Sin transparencia) */
         #overlay {
             display: flex;
             align-items: center;
-            background: #0a0a0a; /* Negro sólido total */
+            background: #0a0a0a; /* Negro sólido */
             color: white;
-            
-            /* TAMAÑO MÁS GRANDE */
             width: 450px; 
             height: 120px; 
-            
-            /* BORDES (Solo derecha) */
             border-radius: 0 15px 15px 0; 
             box-shadow: 10px 0 30px rgba(0,0,0,0.8);
             box-sizing: border-box;
-            
-            /* Animación de entrada */
             transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             opacity: 0;
             transform: translateX(-50px);
         }
 
-        #overlay.active { 
-            opacity: 1; 
-            transform: translateX(0); 
-        }
+        #overlay.active { opacity: 1; transform: translateX(0); }
 
-        /* PORTADA PEGADA AL INICIO */
         #album-art { 
-            width: 120px; /* Cubre todo el alto del contenedor */
-            height: 120px; 
-            object-fit: cover;
-            border-radius: 0; 
-            flex-shrink: 0;
-            border-right: 4px solid #1DB954; /* Separador verde Spotify */
+            width: 120px; height: 120px; 
+            object-fit: cover; flex-shrink: 0;
+            border-right: 4px solid #1DB954; 
         }
 
-        /* Contenedor de Información */
         .info {
             flex-grow: 1;
             display: flex;
@@ -56,40 +40,30 @@
             justify-content: center;
             overflow: hidden;
             padding: 0 20px;
-            width: calc(100% - 120px);
         }
 
-        /* Máscara de Scroll */
+        /* Máscara para que el texto desaparezca al final del rectangulo */
         .scroll-mask {
             width: 100%;
             overflow: hidden;
             white-space: nowrap;
-            mask-image: linear-gradient(to right, black 85%, transparent);
-            -webkit-mask-image: linear-gradient(to right, black 85%, transparent);
+            mask-image: linear-gradient(to right, black 80%, transparent);
+            -webkit-mask-image: linear-gradient(to right, black 80%, transparent);
+        }
+
+        /* Contenedor que permite el loop infinito */
+        .scroll-wrapper {
+            display: inline-flex; /* Para que el duplicado se pegue al original */
         }
 
         .should-scroll {
-            display: inline-block;
-            animation: marquee 10s linear infinite;
+            animation: marquee linear infinite;
         }
 
-        /* ARTISTA (CIAN) - MÁS GRANDE */
-        #artist { 
-            font-size: 16px; 
-            color: #2fb3a4;
-            letter-spacing: 0.5px;
-            margin-bottom: 4px;
-            display: block;
-        }
-        
-        /* TÍTULO (BLANCO) - MUCHO MÁS GRANDE */
-        #title { 
-            font-size: 26px; 
-            color: #ffffff;
-            display: block;
-            line-height: 1.1;
-        }
+        #artist { font-size: 16px; color: #2fb3a4; margin-bottom: 4px; display: block; }
+        #title { font-size: 26px; color: #ffffff; display: block; }
 
+        /* Animación: mueve el contenido 100% de su ancho original (que es la mitad del wrapper) */
         @keyframes marquee {
             0% { transform: translateX(0); }
             100% { transform: translateX(-50%); }
@@ -102,15 +76,15 @@
         <img id="album-art" src="" alt="">
         <div class="info">
             <div id="artist-mask" class="scroll-mask">
-                <div id="artist-container">
+                <div id="artist-wrapper" class="scroll-wrapper">
                     <span id="artist"></span>
-                    <span id="artist-repeat" style="margin-left: 50px; display: none;"></span>
+                    <span id="artist-repeat" style="padding-left: 50px;"></span>
                 </div>
             </div>
             <div id="title-mask" class="scroll-mask">
-                <div id="title-container">
+                <div id="title-wrapper" class="scroll-wrapper">
                     <span id="title"></span>
-                    <span id="title-repeat" style="margin-left: 50px; display: none;"></span>
+                    <span id="title-repeat" style="padding-left: 50px;"></span>
                 </div>
             </div>
         </div>
@@ -131,11 +105,13 @@
                         
                         setTimeout(() => {
                             document.getElementById('title').innerText = data.title;
+                            document.getElementById('title-repeat').innerText = data.title;
                             document.getElementById('artist').innerText = data.artist;
+                            document.getElementById('artist-repeat').innerText = data.artist;
                             document.getElementById('album-art').src = data.albumImageUrl;
                             
-                            checkAndSetScroll('title', data.title);
-                            checkAndSetScroll('artist', data.artist);
+                            checkScroll('title');
+                            checkScroll('artist');
 
                             widget.classList.add('active');
                         }, 600);
@@ -146,29 +122,26 @@
                     widget.classList.remove('active');
                     lastTrack = "";
                 }
-            } catch (e) { console.log("Reconectando..."); }
+            } catch (e) { console.log("Error de conexión"); }
         }
 
-        function checkAndSetScroll(type, text) {
-            const container = document.getElementById(type + '-container');
+        function checkScroll(type) {
+            const wrapper = document.getElementById(type + '-wrapper');
             const mask = document.getElementById(type + '-mask');
-            const repeatEl = document.getElementById(type + '-repeat');
-            const textEl = document.getElementById(type);
-            
-            container.classList.remove('should-scroll');
-            repeatEl.style.display = 'none';
+            const original = document.getElementById(type);
+            const repeat = document.getElementById(type + '-repeat');
 
-            const canvas = document.createElement("canvas");
-            const context = canvas.getContext("2d");
-            context.font = window.getComputedStyle(textEl).font;
-            const textWidth = context.measureText(text.toLowerCase()).width;
-            
-            if (textWidth > (mask.offsetWidth - 10)) {
-                container.classList.add('should-scroll');
-                repeatEl.innerText = text;
-                repeatEl.style.display = 'inline-block';
-                const duration = Math.max(8, textWidth / 25);
-                container.style.animationDuration = duration + 's';
+            wrapper.classList.remove('should-scroll');
+            repeat.style.display = 'none';
+
+            // Medimos si el texto original supera el ancho de la máscara
+            if (original.offsetWidth > mask.offsetWidth) {
+                repeat.style.display = 'inline-block';
+                wrapper.classList.add('should-scroll');
+                
+                // Velocidad dinámica: 30px por segundo aprox
+                const duration = original.offsetWidth / 30;
+                wrapper.style.animationDuration = duration + 's';
             }
         }
 
