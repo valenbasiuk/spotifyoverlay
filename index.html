@@ -2,9 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Spotify Overlay Jack Stauber Style</title>
+    <title>Spotify Overlay Jack Stauber Style Fix</title>
     <style>
-        /* Arial Black y todo a minúsculas */
         body { 
             margin: 0; padding: 0; overflow: hidden; 
             font-family: 'Arial Black', sans-serif; 
@@ -14,15 +13,14 @@
         #overlay {
             display: flex;
             align-items: center;
-            background: rgba(15, 15, 15, 0.95); /* Negro casi total */
+            background: rgba(15, 15, 15, 0.95);
             color: white;
             width: 320px; 
             height: 85px; 
             padding: 10px;
-            border-radius: 4px; /* Bordes menos redondeados para ese estilo */
+            border-radius: 4px;
             box-sizing: border-box;
             gap: 12px;
-            
             transition: all 0.5s ease-in-out;
             opacity: 0;
             transform: translateY(10px);
@@ -30,10 +28,7 @@
 
         #overlay.active { opacity: 1; transform: translateY(0); }
 
-        #album-art { 
-            width: 65px; height: 65px; 
-            border-radius: 4px; flex-shrink: 0; 
-        }
+        #album-art { width: 65px; height: 65px; border-radius: 4px; flex-shrink: 0; }
 
         .info {
             flex-grow: 1;
@@ -41,13 +36,14 @@
             flex-direction: column;
             justify-content: center;
             overflow: hidden;
+            /* FIX: Aseguramos que nada se salga del contenedor verticalmente */
         }
 
-        /* Máscara sin blur al inicio para que no se vea borroso */
         .scroll-mask {
             width: 100%;
             overflow: hidden;
-            white-space: nowrap;
+            /* FIX CRÍTICO: Evita que el texto largo salte a una segunda línea */
+            white-space: nowrap; 
             mask-image: linear-gradient(to right, black 92%, transparent);
             -webkit-mask-image: linear-gradient(to right, black 92%, transparent);
         }
@@ -57,17 +53,16 @@
             animation: marquee 10s linear infinite;
         }
 
-        /* ARTISTA ARRIBA (Cian/Verde) */
         #artist { 
             font-size: 11px; 
-            color: #1db954; /* Verde Spotify o #2fb3a4 para el cian de tu foto */
-            letter-spacing: 0.5px;
-            margin-bottom: 2px;
+            color: #2fb3a4; /* Verde/Cian más parecido a tu captura */
+            letter-spacing: 0.2px;
+            margin-bottom: 1px;
+            display: block;
         }
         
-        /* TÍTULO ABAJO (Blanco) */
         #title { 
-            font-size: 18px; 
+            font-size: 17px; /* Bajé un pelín el tamaño para que no sature */
             color: #ffffff;
             display: block;
         }
@@ -149,7 +144,8 @@
                 container.classList.add('should-scroll');
                 repeatEl.innerText = text;
                 repeatEl.style.display = 'inline-block';
-                const duration = Math.max(8, textWidth / 20);
+                // Ajustamos velocidad según longitud
+                const duration = Math.max(7, textWidth / 25);
                 container.style.animationDuration = duration + 's';
             }
         }
