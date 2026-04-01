@@ -2,71 +2,105 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Spotify Overlay Fixed Scroll</title>
+    <title>Spotify Overlay XL Fixed</title>
     <style>
+        /* Base: Arial Black en minúsculas */
         body { 
             margin: 0; padding: 0; overflow: hidden; 
             font-family: 'Arial Black', sans-serif; 
             text-transform: lowercase; 
         }
         
+        /* Contenedor SÓLIDO (Sin transparencia) - TAMAÑO FIJO XL */
         #overlay {
             display: flex;
             align-items: center;
             background: #0a0a0a; /* Negro sólido */
             color: white;
-            width: 450px; 
-            height: 120px; 
-            border-radius: 0 15px 15px 0; 
-            box-shadow: 10px 0 30px rgba(0,0,0,0.8);
+            
+            /* TAMAÑO MÁS GRANDE (Para OBS con alta resolución) */
+            width: 600px; /* De 450px a 600px */
+            height: 180px; /* De 120px a 180px */
+            
+            /* BORDES (Solo derecha) */
+            border-radius: 0 25px 25px 0; 
+            box-shadow: 15px 0 45px rgba(0,0,0,0.9);
             box-sizing: border-box;
-            transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            
+            /* Transición de entrada (Slide limpio, SIN SCALE) */
+            transition: all 0.6s ease-out;
             opacity: 0;
-            transform: translateX(-50px);
+            transform: translateX(-80px); /* Slide In desde más lejos */
         }
 
-        #overlay.active { opacity: 1; transform: translateX(0); }
+        #overlay.active { 
+            opacity: 1; 
+            transform: translateX(0); 
+        }
 
+        /* PORTADA DEL ALBUM (PEGADA AL INICIO) */
         #album-art { 
-            width: 120px; height: 120px; 
-            object-fit: cover; flex-shrink: 0;
-            border-right: 4px solid #1DB954; 
+            width: 180px; /* Cubre todo el alto del contenedor XL */
+            height: 180px; 
+            object-fit: cover;
+            border-radius: 0; 
+            flex-shrink: 0;
+            border-right: 6px solid #1DB954; /* Separador verde más ancho */
         }
 
+        /* Contenedor de Información (Alineado a la izquierda con más aire) */
         .info {
             flex-grow: 1;
             display: flex;
             flex-direction: column;
             justify-content: center;
             overflow: hidden;
-            padding: 0 20px;
+            padding: 0 25px; /* Más aire a la izquierda */
+            width: calc(100% - 180px); /* Espacio restante */
         }
 
-        /* Máscara para que el texto desaparezca al final del rectangulo */
+        /* Máscara Inteligente NoBlur (Cian/Verde) */
         .scroll-mask {
             width: 100%;
             overflow: hidden;
             white-space: nowrap;
-            mask-image: linear-gradient(to right, black 80%, transparent);
-            -webkit-mask-image: linear-gradient(to right, black 80%, transparent);
+            /* Máscara nítida a la izquierda, desvanecida a la derecha */
+            mask-image: linear-gradient(to right, black, black 85%, transparent);
+            -webkit-mask-image: linear-gradient(to right, black, black 85%, transparent);
         }
 
-        /* Contenedor que permite el loop infinito */
+        /* Contenedor de Scroll (display: inline-flex es clave) */
         .scroll-wrapper {
-            display: inline-flex; /* Para que el duplicado se pegue al original */
+            display: inline-flex;
+            width: auto;
         }
 
+        /* Clase para el Scroll Seamless */
         .should-scroll {
             animation: marquee linear infinite;
         }
 
-        #artist { font-size: 16px; color: #2fb3a4; margin-bottom: 4px; display: block; }
-        #title { font-size: 26px; color: #ffffff; display: block; }
+        /* ARTISTA (CIAN) - ¡MÁS GRANDE! (Casi el doble) */
+        #artist { 
+            font-size: 30px; /* De 16px a 30px */
+            color: #2fb3a4; /* Cian Jack Stauber */
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+            display: block;
+        }
+        
+        /* TÍTULO (BLANCO) - ¡MUCHO MÁS GRANDE! (Bastante más) */
+        #title { 
+            font-size: 48px; /* De 26px a 48px */
+            color: #ffffff;
+            display: block;
+            line-height: 1.1; /* Ajuste para Arial Black */
+        }
 
-        /* Animación: mueve el contenido 100% de su ancho original (que es la mitad del wrapper) */
+        /* Animación de Marquesina (Scroll Seamless) - SIN EFECTOS DE SCALE */
         @keyframes marquee {
             0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
+            100% { transform: translateX(-50%); } /* Ajustado para el duplicado */
         }
     </style>
 </head>
@@ -74,17 +108,19 @@
 
     <div id="overlay">
         <img id="album-art" src="" alt="">
+        
         <div class="info">
             <div id="artist-mask" class="scroll-mask">
                 <div id="artist-wrapper" class="scroll-wrapper">
                     <span id="artist"></span>
-                    <span id="artist-repeat" style="padding-left: 50px;"></span>
+                    <span id="artist-repeat" style="padding-left: 60px;"></span>
                 </div>
             </div>
+            
             <div id="title-mask" class="scroll-mask">
                 <div id="title-wrapper" class="scroll-wrapper">
                     <span id="title"></span>
-                    <span id="title-repeat" style="padding-left: 50px;"></span>
+                    <span id="title-repeat" style="padding-left: 60px;"></span>
                 </div>
             </div>
         </div>
@@ -104,12 +140,15 @@
                         widget.classList.remove('active');
                         
                         setTimeout(() => {
+                            // Asignar texto y repetición para el loop sin cortes
                             document.getElementById('title').innerText = data.title;
                             document.getElementById('title-repeat').innerText = data.title;
                             document.getElementById('artist').innerText = data.artist;
                             document.getElementById('artist-repeat').innerText = data.artist;
+                            
                             document.getElementById('album-art').src = data.albumImageUrl;
                             
+                            // Comprobar Scroll individualmente
                             checkScroll('title');
                             checkScroll('artist');
 
@@ -122,25 +161,27 @@
                     widget.classList.remove('active');
                     lastTrack = "";
                 }
-            } catch (e) { console.log("Error de conexión"); }
+            } catch (e) { console.log("Error de red."); }
         }
 
+        // Función inteligente Seamless Scroll
         function checkScroll(type) {
             const wrapper = document.getElementById(type + '-wrapper');
             const mask = document.getElementById(type + '-mask');
             const original = document.getElementById(type);
             const repeat = document.getElementById(type + '-repeat');
 
+            // Limpiamos estado anterior
             wrapper.classList.remove('should-scroll');
             repeat.style.display = 'none';
 
-            // Medimos si el texto original supera el ancho de la máscara
+            // Comprobamos si el texto original supera el ancho de la máscara
             if (original.offsetWidth > mask.offsetWidth) {
                 repeat.style.display = 'inline-block';
                 wrapper.classList.add('should-scroll');
                 
-                // Velocidad dinámica: 30px por segundo aprox
-                const duration = original.offsetWidth / 30;
+                // Velocidad dinámica según longitud (más largo = más rápido para leer)
+                const duration = Math.max(9, original.offsetWidth / 35);
                 wrapper.style.animationDuration = duration + 's';
             }
         }
