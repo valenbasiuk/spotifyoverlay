@@ -2,64 +2,78 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Spotify Overlay</title>
+    <title>Spotify Overlay Pro</title>
     <style>
-        /* Diseño minimalista con fondo transparente */
         body { margin: 0; padding: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
         
         #overlay {
             display: flex; align-items: center; gap: 12px;
-            background: rgba(0, 0, 0, 0.75); color: white;
+            background: rgba(0, 0, 0, 0.8); color: white;
             padding: 12px; border-radius: 12px;
-            width: fit-content; min-width: 280px; max-width: 400px;
-            border-left: 5px solid #1DB954; /* Verde Spotify */
-            transition: all 0.5s ease-in-out;
-            opacity: 0; transform: translateY(20px);
+            width: fit-content; min-width: 280px; max-width: 420px;
+            border-left: 5px solid #1DB954;
+            
+            /* Animación de entrada/salida */
+            transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            opacity: 0; 
+            transform: translateX(-20px); /* Aparece desde la izquierda */
         }
 
-        #overlay.active { opacity: 1; transform: translateY(0); }
+        #overlay.active { 
+            opacity: 1; 
+            transform: translateX(0); 
+        }
 
-        #album-art { width: 55px; height: 55px; border-radius: 6px; }
+        #album-art { 
+            width: 55px; height: 55px; border-radius: 6px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
 
         .info { display: flex; flex-direction: column; overflow: hidden; }
-        
         #title { font-weight: bold; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        
         #artist { font-size: 13px; opacity: 0.7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     </style>
 </head>
 <body>
 
     <div id="overlay">
-        <img id="album-art" src="" alt="Album Art">
+        <img id="album-art" src="" alt="">
         <div class="info">
-            <span id="title">Cargando...</span>
-            <span id="artist">Artista</span>
+            <span id="title"></span>
+            <span id="artist"></span>
         </div>
     </div>
 
     <script>
+        let currentSong = "";
+
         async function updateSpotify() {
             try {
                 const res = await fetch('/api/now-playing');
                 const data = await res.json();
-
                 const widget = document.getElementById('overlay');
 
                 if (data.isPlaying && !data.error) {
-                    document.getElementById('title').innerText = data.title;
-                    document.getElementById('artist').innerText = data.artist;
-                    document.getElementById('album-art').src = data.albumImageUrl;
-                    widget.classList.add('active');
+                    // Si la canción cambió, hacemos la transición
+                    if (currentSong !== data.title) {
+                        widget.classList.remove('active'); // Se oculta
+                        
+                        setTimeout(() => {
+                            document.getElementById('title').innerText = data.title;
+                            document.getElementById('artist').innerText = data.artist;
+                            document.getElementById('album-art').src = data.albumImageUrl;
+                            widget.classList.add('active'); // Aparece con los nuevos datos
+                        }, 600); 
+                        
+                        currentSong = data.title;
+                    }
                 } else {
                     widget.classList.remove('active');
+                    currentSong = "";
                 }
-            } catch (e) {
-                console.log("Esperando conexión...");
-            }
+            } catch (e) { console.log("Reconectando..."); }
         }
 
-        // Actualiza cada 5 segundos para evitar el baneo (Rate Limit)
         setInterval(updateSpotify, 5000);
         updateSpotify();
     </script>
