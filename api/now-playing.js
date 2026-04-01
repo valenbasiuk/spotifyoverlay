@@ -1,46 +1,52 @@
 export default async function handler(req, res) {
-  const {
-    SPOTIFY_CLIENT_ID: client_id,
-    SPOTIFY_CLIENT_SECRET: client_secret,
-    SPOTIFY_REFRESH_TOKEN: refresh_token,
-  } = process.env;
+  // 1. Extraer variables (Asegurate que en Vercel se llamen EXACTAMENTE así)
+  const client_id = process.env.SPOTIFY_CLIENT_ID;
+  const client_secret = process.env.SPOTIFY_CLIENT_SECRET;
+  const refresh_token = process.env.SPOTIFY_REFRESH_TOKEN;
 
   const basic = Buffer.from(`${client_id}:${client_secret}`).toString('base64');
-  const NOW_PLAYING_ENDPOINT = `https://api.spotify.com/v1/me/player/currently-playing`;
-  const TOKEN_ENDPOINT = `https://accounts.spotify.com/api/token`;
 
-  // 1. Obtener nuevo access_token
-  const response = await fetch(TOKEN_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      Authorization: `Basic ${basic}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: new URLSearchParams({
-      grant_type: 'refresh_token',
-      refresh_token,
-    }),
-  });
+  try {
+    // 2. Pedir el Access Token
+    const tokenResponse = await fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST',
+      headers: {
+        Authorization: `Basic ${basic}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        grant_type: 'refresh_token',
+        refresh_token,
+      }),
+    });
 
-  const { access_token } = await response.json();
+    const tokenData = await tokenResponse.json();
+    
+    // Si hay error con el token, lo mostramos
+    if (tokenData.error) {
+      return res.status(200).json({ isPlaying: false, error: "Error de Token", message: tokenData.error });
+    }
 
-  // 2. Consultar Spotify
-  const nowPlaying = await fetch(NOW_PLAYING_ENDPOINT, {
-    headers: { Authorization: `Bearer ${access_token}` },
-  });
+    // 3. Pedir la canción
+    const response = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
+      headers: { Authorization: `Bearer ${tokenData.access_token}` },
+    });
 
-  if (nowPlaying.status === 204 || nowPlaying.status > 400) {
-    return res.status(200).json({ isPlaying: false });
+    // Caso 204: Spotify dice que no hay nada activo
+    if (response.status === 204) {
+      return res.status(200).json({ isPlaying: false, status: "No hay nada sonando (204)" });
+    }
+
+    const song = await response.json();
+
+    return res.status(200).json({
+      isPlaying: song.is_playing,
+      title: song.item.name,
+      artist: song.item.artists.map((_artist) => _artist.name).join(', '),
+      albumImageUrl: song.item.album.images[0].url,
+    });
+
+  } catch (error) {
+    return res.status(200).json({ isPlaying: false, error: error.message });
   }
-
-  const song = await nowPlaying.json();
-  
-  // 3. Responder con los datos limpios
-  return res.status(200).json({
-    isPlaying: song.is_playing,
-    title: song.item.name,
-    artist: song.item.artists.map((_artist) => _artist.name).join(', '),
-    albumImageUrl: song.item.album.images[0].url,
-    url: song.item.external_urls.spotify
-  });
 }
