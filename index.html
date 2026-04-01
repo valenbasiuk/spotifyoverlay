@@ -2,8 +2,9 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Spotify Overlay Fast Sync</title>
+    <title>Spotify Overlay Pro Transitions</title>
     <style>
+        /* Base: Arial Black en minúsculas */
         body { 
             margin: 0; padding: 0; overflow: hidden; 
             font-family: 'Arial Black', sans-serif; 
@@ -11,79 +12,107 @@
             -webkit-font-smoothing: antialiased;
         }
         
+        /* EL FONDO FIJO SÓLIDO */
         #overlay {
+            position: relative;
             display: flex;
             align-items: center;
-            background: #0a0a0a;
+            background: #0a0a0a; /* Negro sólido FIJO */
             color: white;
             width: 500px; 
             height: 115px; 
             border-radius: 0 15px 15px 0; 
             box-shadow: 10px 0 30px rgba(0,0,0,0.8);
             box-sizing: border-box;
-            transition: opacity 0.4s ease-out, transform 0.4s ease-out; /* Animación más rápida */
+            overflow: hidden; /* Importante para que las letras no se salgan */
+            
+            /* Animación de entrada inicial del panel entero */
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
             opacity: 0;
             transform: translateX(-40px);
         }
 
         #overlay.active { opacity: 1; transform: translateX(0); }
 
-        #album-art { 
+        /* --- CAPAS DE CONTENIDO (Para transiciones) --- */
+        .content-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            
+            /* Transición por defecto: el contenido se difumina */
+            transition: opacity 0.5s ease-in-out;
+            opacity: 0;
+            z-index: 1;
+        }
+
+        .content-layer.visible {
+            opacity: 1;
+            z-index: 2;
+        }
+
+        /* --- PORTADA (DIFUMINADO - CROSSFADE) --- */
+        .album-art { 
             width: 115px; height: 115px; 
             object-fit: cover; flex-shrink: 0;
             border-right: 4px solid #1DB954; 
+            
+            /* Transición suave de opacidad */
+            transition: opacity 0.5s ease-in-out;
         }
 
+        /* --- INFO Y LETRAS (DESLIZAMIENTO) --- */
         .info {
             flex-grow: 1;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            overflow: hidden;
             padding: 0 20px;
+            
+            /* El truco: las letras se mueven de forma independiente a la capa */
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease-in-out;
+            opacity: 0;
+            transform: translateX(50px); /* Empieza a la derecha */
         }
 
-        .scroll-mask {
-            width: 100%;
-            overflow: hidden;
-            white-space: nowrap;
-            mask-image: linear-gradient(to right, black 95%, transparent 100%);
-            -webkit-mask-image: linear-gradient(to right, black 95%, transparent 100%);
+        /* Cuando la capa es visible, las letras vuelven a su lugar */
+        .content-layer.visible .info {
+            opacity: 1;
+            transform: translateX(0);
         }
 
-        .scroll-wrapper { 
-            display: inline-flex;
-            width: max-content; 
-            will-change: transform;
+        /* Cuando la capa se oculta, las letras se van a la derecha */
+        .content-layer.hidden-out .info {
+            opacity: 0;
+            transform: translateX(100px); /* Se va lejos a la derecha */
         }
 
-        .should-scroll { animation: marquee linear infinite; }
+        /* --- ESTILOS DE TEXTO --- */
+        #artist-1, #artist-2 { font-size: 20px; color: #2fb3a4; margin-bottom: 2px; display: block; }
+        #title-1, #title-2 { font-size: 34px; color: #ffffff; display: block; line-height: 1.1; }
 
-        #artist { font-size: 20px; color: #2fb3a4; margin-bottom: 2px; display: block; }
-        #title { font-size: 34px; color: #ffffff; display: block; line-height: 1.1; }
-
-        @keyframes marquee {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
-        }
     </style>
 </head>
 <body>
 
     <div id="overlay">
-        <img id="album-art" src="" alt="">
-        <div class="info">
-            <div id="artist-mask" class="scroll-mask">
-                <div id="artist-wrapper" class="scroll-wrapper">
-                    <span id="artist"></span>
-                    <span id="artist-repeat" style="padding-left: 60px; display: none;"></span>
-                </div>
+        <div id="layer-1" class="content-layer">
+            <img id="album-art-1" class="album-art" src="" alt="">
+            <div class="info">
+                <span id="artist-1"></span>
+                <span id="title-1"></span>
             </div>
-            <div id="title-mask" class="scroll-mask">
-                <div id="title-wrapper" class="scroll-wrapper">
-                    <span id="title"></span>
-                    <span id="title-repeat" style="padding-left: 60px; display: none;"></span>
-                </div>
+        </div>
+
+        <div id="layer-2" class="content-layer">
+            <img id="album-art-2" class="album-art" src="" alt="">
+            <div class="info">
+                <span id="artist-2"></span>
+                <span id="title-2"></span>
             </div>
         </div>
     </div>
@@ -91,9 +120,10 @@
     <script>
         let lastTrack = "";
         let isFetching = false;
+        let activeLayer = 1; // 1 o 2
 
         async function updateSpotify() {
-            if (isFetching) return; // Evita peticiones encimadas
+            if (isFetching) return;
             isFetching = true;
 
             try {
@@ -103,53 +133,74 @@
 
                 if (data.isPlaying && !data.error) {
                     if (lastTrack !== data.title) {
-                        // Cambiamos el contenido más rápido
-                        widget.classList.remove('active');
                         
-                        setTimeout(() => {
-                            updateContent('title', data.title);
-                            updateContent('artist', data.artist);
-                            document.getElementById('album-art').src = data.albumImageUrl;
+                        // Primer arranque: mostrar sin animación
+                        if (lastTrack === "") {
+                            updateLayerContent(activeLayer, data);
+                            document.getElementById('layer-' + activeLayer).classList.add('visible');
                             widget.classList.add('active');
-                        }, 400); // Delay de transición reducido
+                        } else {
+                            // Cambio con animación pro
+                            performProTransition(data);
+                        }
                         
                         lastTrack = data.title;
                     }
                 } else {
                     widget.classList.remove('active');
+                    // Ocultar capas con delay
+                    setTimeout(() => {
+                        document.getElementById('layer-1').classList.remove('visible');
+                        document.getElementById('layer-2').classList.remove('visible');
+                    }, 600);
                     lastTrack = "";
                 }
-            } catch (e) { 
-                console.log("Error de conexión"); 
-            } finally {
+            } catch (e) { console.log("Error de conexión"); } finally {
                 isFetching = false;
             }
         }
 
-        function updateContent(type, text) {
-            const main = document.getElementById(type);
-            const repeat = document.getElementById(type + '-repeat');
-            const wrapper = document.getElementById(type + '-wrapper');
-            const mask = document.getElementById(type + '-mask');
+        function performProTransition(data) {
+            const nextLayer = activeLayer === 1 ? 2 : 1;
+            const currentLayerEl = document.getElementById('layer-' + activeLayer);
+            const nextLayerEl = document.getElementById('layer-' + nextLayer);
 
-            wrapper.classList.remove('should-scroll');
-            repeat.style.display = 'none';
-            main.innerText = text;
+            // 1. Cargamos el contenido nuevo en la capa oculta
+            updateLayerContent(nextLayer, data);
 
-            requestAnimationFrame(() => {
-                if (main.offsetWidth > (mask.offsetWidth - 5)) {
-                    repeat.innerText = text;
-                    repeat.style.display = 'inline-block';
-                    wrapper.classList.add('should-scroll');
-                    const duration = main.offsetWidth / 35; 
-                    wrapper.style.animationDuration = Math.max(7, duration) + 's';
-                }
-            });
+            // 2. Iniciamos la animación:
+            // La capa vieja se va a la derecha
+            currentLayerEl.classList.add('hidden-out');
+            currentLayerEl.classList.remove('visible');
+
+            // La capa nueva aparece (se difumina la portada, entran las letras)
+            nextLayerEl.classList.add('visible');
+
+            // 3. Limpiamos estados después de la animación (0.5s)
+            setTimeout(() => {
+                currentLayerEl.classList.remove('hidden-out');
+                activeLayer = nextLayer;
+            }, 500);
         }
 
-        // REDUCIDO: Ahora chequea cada 1 segundo para cambios instantáneos
-        setInterval(updateSpotify, 1000); 
-        updateSpotify();
+        function updateLayerContent(layerNum, data) {
+            document.getElementById('title-' + layerNum).innerText = data.title;
+            document.getElementById('artist-' + layerNum).innerText = data.artist;
+            document.getElementById('album-art-' + layerNum).src = data.albumImageUrl;
+        }
+
+        // --- MODO INTELIGENTE DE TIEMPO (Anti-Ban) ---
+        async function updateLoop() {
+            await updateSpotify();
+            
+            // Si lastTrack está vacío (pausado), esperamos 5s. Si hay música, vamos cada 2s.
+            let nextCheck = lastTrack === "" ? 5000 : 2000; 
+            setTimeout(updateLoop, nextCheck);
+        }
+
+        // Arrancamos el loop inteligente
+        updateLoop();
+
     </script>
 </body>
 </html>
