@@ -2,80 +2,114 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Spotify Overlay Pro</title>
+    <title>Spotify Overlay Square</title>
     <style>
-        body { margin: 0; padding: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
+        /* Fuente y Reset */
+        body { margin: 0; padding: 0; overflow: hidden; font-family: 'Arial Black', Gadget, sans-serif; }
         
+        /* Contenedor Cuadrado Fijo */
         #overlay {
-            display: flex; align-items: center; gap: 12px;
-            background: rgba(0, 0, 0, 0.8); color: white;
-            padding: 12px; border-radius: 12px;
-            width: fit-content; min-width: 280px; max-width: 420px;
-            border-left: 5px solid #1DB954;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.85);
+            color: white;
+            width: 200px;  /* Ancho fijo */
+            height: 200px; /* Alto fijo (Cuadrado) */
+            padding: 15px;
+            border-radius: 20px;
+            border-bottom: 6px solid #1DB954;
+            box-sizing: border-box;
             
-            /* Animación de entrada/salida */
-            transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            opacity: 0; 
-            transform: translateX(-20px); /* Aparece desde la izquierda */
+            /* Animación de entrada */
+            transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            opacity: 0;
+            transform: scale(0.8); /* Efecto de zoom in */
         }
 
         #overlay.active { 
             opacity: 1; 
-            transform: translateX(0); 
+            transform: scale(1); 
         }
 
+        /* Imagen del Album */
         #album-art { 
-            width: 55px; height: 55px; border-radius: 6px; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            width: 80px; 
+            height: 80px; 
+            border-radius: 10px; 
+            margin-bottom: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
 
-        .info { display: flex; flex-direction: column; overflow: hidden; }
-        #title { font-weight: bold; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        #artist { font-size: 13px; opacity: 0.7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        /* Contenedor del Texto (El secreto de la marquesina) */
+        .text-container {
+            width: 100%;
+            overflow: hidden;
+            text-align: center;
+            position: relative;
+        }
+
+        .scroll-text {
+            display: inline-block;
+            white-space: nowrap;
+            padding-left: 100%; /* Empieza fuera a la derecha */
+            animation: marquee 10s linear infinite;
+        }
+
+        #title { font-size: 16px; display: block; margin-bottom: 2px; text-transform: uppercase; }
+        #artist { font-size: 12px; opacity: 0.8; font-family: 'Arial', sans-serif; font-weight: bold; }
+
+        /* Animación de Marquesina */
+        @keyframes marquee {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-100%, 0); }
+        }
     </style>
 </head>
 <body>
 
     <div id="overlay">
         <img id="album-art" src="" alt="">
-        <div class="info">
-            <span id="title"></span>
-            <span id="artist"></span>
+        <div class="text-container">
+            <div class="scroll-text">
+                <span id="title"></span>
+                <span id="artist"></span>
+            </div>
         </div>
     </div>
 
     <script>
-        let currentSong = "";
+        let lastTrack = "";
 
-        async function updateSpotify() {
+        async function update() {
             try {
                 const res = await fetch('/api/now-playing');
                 const data = await res.json();
                 const widget = document.getElementById('overlay');
 
                 if (data.isPlaying && !data.error) {
-                    // Si la canción cambió, hacemos la transición
-                    if (currentSong !== data.title) {
-                        widget.classList.remove('active'); // Se oculta
+                    if (lastTrack !== data.title) {
+                        widget.classList.remove('active');
                         
                         setTimeout(() => {
                             document.getElementById('title').innerText = data.title;
-                            document.getElementById('artist').innerText = data.artist;
+                            document.getElementById('artist').innerText = " — " + data.artist;
                             document.getElementById('album-art').src = data.albumImageUrl;
-                            widget.classList.add('active'); // Aparece con los nuevos datos
-                        }, 600); 
+                            widget.classList.add('active');
+                        }, 600);
                         
-                        currentSong = data.title;
+                        lastTrack = data.title;
                     }
                 } else {
                     widget.classList.remove('active');
-                    currentSong = "";
+                    lastTrack = "";
                 }
-            } catch (e) { console.log("Reconectando..."); }
+            } catch (e) { console.log("Buscando señal..."); }
         }
 
-        setInterval(updateSpotify, 5000);
-        updateSpotify();
+        setInterval(update, 5000);
+        update();
     </script>
 </body>
 </html>
