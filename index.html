@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>overlay</title>
+    <title>Spotify Overlay Final Fixed</title>
     <style>
         body { 
             margin: 0; padding: 0; overflow: hidden; 
@@ -13,14 +13,15 @@
         #overlay {
             display: flex;
             align-items: center;
-            background: #0a0a0a; /* Negro */
+            background: #0a0a0a; /* Negro sólido */
             color: white;
             width: 500px; 
             height: 115px; 
             border-radius: 0 15px 15px 0; 
             box-shadow: 10px 0 30px rgba(0,0,0,0.8);
             box-sizing: border-box;
-            transition: all 0.6s ease-out;
+            /* Solo animamos la entrada del panel entero */
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
             opacity: 0;
             transform: translateX(-40px);
         }
@@ -42,28 +43,31 @@
             padding: 0 20px;
         }
 
-        /* --- FIX DEL BLUR FINAL --- */
         .scroll-mask {
             width: 100%;
             overflow: hidden;
             white-space: nowrap;
-            /* Ahora el texto es sólido hasta el 95%, el blur es mínimo al final */
             mask-image: linear-gradient(to right, black 95%, transparent 100%);
             -webkit-mask-image: linear-gradient(to right, black 95%, transparent 100%);
         }
 
-        .scroll-wrapper { display: inline-flex; }
+        /* Eliminamos cualquier transición aquí para evitar el efecto zoom */
+        .scroll-wrapper { 
+            display: inline-flex;
+            transition: none !important; 
+        }
+
         .should-scroll { animation: marquee linear infinite; }
 
         #artist { 
-            font-size: 20px; /* Un pelín más grande para legibilidad */
+            font-size: 20px; 
             color: #2fb3a4; 
             margin-bottom: 2px;
             display: block;
         }
         
         #title { 
-            font-size: 34px; /* Grande y nítido */
+            font-size: 34px; 
             color: #ffffff;
             display: block;
             line-height: 1.1;
@@ -83,13 +87,13 @@
             <div id="artist-mask" class="scroll-mask">
                 <div id="artist-wrapper" class="scroll-wrapper">
                     <span id="artist"></span>
-                    <span id="artist-repeat" style="padding-left: 50px;"></span>
+                    <span id="artist-repeat" style="padding-left: 50px; display: none;"></span>
                 </div>
             </div>
             <div id="title-mask" class="scroll-mask">
                 <div id="title-wrapper" class="scroll-wrapper">
                     <span id="title"></span>
-                    <span id="title-repeat" style="padding-left: 50px;"></span>
+                    <span id="title-repeat" style="padding-left: 50px; display: none;"></span>
                 </div>
             </div>
         </div>
@@ -108,13 +112,9 @@
                     if (lastTrack !== data.title) {
                         widget.classList.remove('active');
                         setTimeout(() => {
-                            document.getElementById('title').innerText = data.title;
-                            document.getElementById('title-repeat').innerText = data.title;
-                            document.getElementById('artist').innerText = data.artist;
-                            document.getElementById('artist-repeat').innerText = data.artist;
+                            updateContent('title', data.title);
+                            updateContent('artist', data.artist);
                             document.getElementById('album-art').src = data.albumImageUrl;
-                            checkScroll('title');
-                            checkScroll('artist');
                             widget.classList.add('active');
                         }, 600);
                         lastTrack = data.title;
@@ -123,22 +123,26 @@
                     widget.classList.remove('active');
                     lastTrack = "";
                 }
-            } catch (e) { console.log("Error de conexión"); }
+            } catch (e) { console.log("Error"); }
         }
 
-        function checkScroll(type) {
+        function updateContent(type, text) {
+            const main = document.getElementById(type);
+            const repeat = document.getElementById(type + '-repeat');
             const wrapper = document.getElementById(type + '-wrapper');
             const mask = document.getElementById(type + '-mask');
-            const original = document.getElementById(type);
-            const repeat = document.getElementById(type + '-repeat');
 
+            // Reset instantáneo
             wrapper.classList.remove('should-scroll');
             repeat.style.display = 'none';
+            main.innerText = text;
 
-            if (original.offsetWidth > (mask.offsetWidth - 5)) {
+            // Medir y aplicar scroll si es necesario
+            if (main.offsetWidth > (mask.offsetWidth - 5)) {
+                repeat.innerText = text;
                 repeat.style.display = 'inline-block';
                 wrapper.classList.add('should-scroll');
-                const duration = Math.max(8, original.offsetWidth / 35);
+                const duration = Math.max(8, main.offsetWidth / 35);
                 wrapper.style.animationDuration = duration + 's';
             }
         }
