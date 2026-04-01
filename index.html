@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Spotify Overlay</title>
+    <style>
+        /* Diseño minimalista con fondo transparente */
+        body { margin: 0; padding: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
+        
+        #overlay {
+            display: flex; align-items: center; gap: 12px;
+            background: rgba(0, 0, 0, 0.75); color: white;
+            padding: 12px; border-radius: 12px;
+            width: fit-content; min-width: 280px; max-width: 400px;
+            border-left: 5px solid #1DB954; /* Verde Spotify */
+            transition: all 0.5s ease-in-out;
+            opacity: 0; transform: translateY(20px);
+        }
+
+        #overlay.active { opacity: 1; transform: translateY(0); }
+
+        #album-art { width: 55px; height: 55px; border-radius: 6px; }
+
+        .info { display: flex; flex-direction: column; overflow: hidden; }
+        
+        #title { font-weight: bold; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        #artist { font-size: 13px; opacity: 0.7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    </style>
+</head>
+<body>
+
+    <div id="overlay">
+        <img id="album-art" src="" alt="Album Art">
+        <div class="info">
+            <span id="title">Cargando...</span>
+            <span id="artist">Artista</span>
+        </div>
+    </div>
+
+    <script>
+        async function updateSpotify() {
+            try {
+                const res = await fetch('/api/now-playing');
+                const data = await res.json();
+
+                const widget = document.getElementById('overlay');
+
+                if (data.isPlaying && !data.error) {
+                    document.getElementById('title').innerText = data.title;
+                    document.getElementById('artist').innerText = data.artist;
+                    document.getElementById('album-art').src = data.albumImageUrl;
+                    widget.classList.add('active');
+                } else {
+                    widget.classList.remove('active');
+                }
+            } catch (e) {
+                console.log("Esperando conexión...");
+            }
+        }
+
+        // Actualiza cada 5 segundos para evitar el baneo (Rate Limit)
+        setInterval(updateSpotify, 5000);
+        updateSpotify();
+    </script>
+</body>
+</html>
