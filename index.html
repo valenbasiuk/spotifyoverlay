@@ -2,87 +2,79 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Spotify Overlay Lowercase NoBlur</title>
+    <title>Spotify Overlay Jack Stauber Style</title>
     <style>
-        /* Estilos Base - Arial Black en MINÚSCULAS */
+        /* Arial Black y todo a minúsculas */
         body { 
             margin: 0; padding: 0; overflow: hidden; 
             font-family: 'Arial Black', sans-serif; 
-            text-transform: lowercase; /* <--- Todo minusculas estricto */
+            text-transform: lowercase; 
         }
         
-        /* Contenedor Rectangular Fijo */
         #overlay {
             display: flex;
             align-items: center;
-            background: rgba(0, 0, 0, 0.85);
+            background: rgba(15, 15, 15, 0.95); /* Negro casi total */
             color: white;
-            width: 380px;  /* Ancho Fijo */
-            height: 90px;  /* Alto Fijo */
-            padding: 12px;
-            border-radius: 12px;
-            border-left: 6px solid #1DB954;
+            width: 320px; 
+            height: 85px; 
+            padding: 10px;
+            border-radius: 4px; /* Bordes menos redondeados para ese estilo */
             box-sizing: border-box;
-            gap: 15px;
+            gap: 12px;
             
-            /* Animación de entrada/salida */
             transition: all 0.5s ease-in-out;
             opacity: 0;
-            transform: translateX(-20px);
+            transform: translateY(10px);
         }
 
-        #overlay.active { opacity: 1; transform: translateX(0); }
+        #overlay.active { opacity: 1; transform: translateY(0); }
 
-        /* Arte del Disco */
         #album-art { 
             width: 65px; height: 65px; 
-            border-radius: 8px; flex-shrink: 0; 
+            border-radius: 4px; flex-shrink: 0; 
         }
 
-        /* Contenedor de Información */
         .info {
             flex-grow: 1;
             display: flex;
             flex-direction: column;
             justify-content: center;
             overflow: hidden;
-            width: calc(100% - 95px);
         }
 
-        /* --- Estilos para el Scroll Inteligente --- */
+        /* Máscara sin blur al inicio para que no se vea borroso */
         .scroll-mask {
             width: 100%;
             overflow: hidden;
             white-space: nowrap;
-            /* FIX PARA EL BLUR: Degradado más nítido a la izquierda */
-            mask-image: linear-gradient(to right, black, black 90%, transparent);
-            -webkit-mask-image: linear-gradient(to right, black, black 90%, transparent);
+            mask-image: linear-gradient(to right, black 92%, transparent);
+            -webkit-mask-image: linear-gradient(to right, black 92%, transparent);
         }
 
-        /* Clase para el Scroll Seamless */
         .should-scroll {
             display: inline-block;
             animation: marquee 10s linear infinite;
         }
 
-        #title { 
-            font-size: 16px; 
-            display: block;
-            margin-bottom: 1px;
+        /* ARTISTA ARRIBA (Cian/Verde) */
+        #artist { 
+            font-size: 11px; 
+            color: #1db954; /* Verde Spotify o #2fb3a4 para el cian de tu foto */
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
         }
         
-        #artist { 
-            font-size: 13px; 
-            opacity: 0.7; 
-            font-family: Arial, sans-serif; 
-            font-weight: bold; 
+        /* TÍTULO ABAJO (Blanco) */
+        #title { 
+            font-size: 18px; 
+            color: #ffffff;
             display: block;
         }
 
-        /* Animación de Marquesina (Scroll Seamless) */
         @keyframes marquee {
             0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); } /* Ajustado para el duplicado */
+            100% { transform: translateX(-50%); }
         }
     </style>
 </head>
@@ -90,19 +82,17 @@
 
     <div id="overlay">
         <img id="album-art" src="" alt="">
-        
         <div class="info">
-            <div id="title-mask" class="scroll-mask">
-                <div id="title-container">
-                    <span id="title"></span>
-                    <span id="title-repeat" style="margin-left: 40px; display: none;"></span>
-                </div>
-            </div>
-            
             <div id="artist-mask" class="scroll-mask">
                 <div id="artist-container">
                     <span id="artist"></span>
                     <span id="artist-repeat" style="margin-left: 40px; display: none;"></span>
+                </div>
+            </div>
+            <div id="title-mask" class="scroll-mask">
+                <div id="title-container">
+                    <span id="title"></span>
+                    <span id="title-repeat" style="margin-left: 40px; display: none;"></span>
                 </div>
             </div>
         </div>
@@ -122,18 +112,11 @@
                         widget.classList.remove('active');
                         
                         setTimeout(() => {
-                            const titleEl = document.getElementById('title');
-                            const artistEl = document.getElementById('artist');
-                            
-                            // 1. Asignar texto
-                            titleEl.innerText = data.title;
-                            artistEl.innerText = data.artist;
+                            document.getElementById('title').innerText = data.title;
+                            document.getElementById('artist').innerText = data.artist;
                             document.getElementById('album-art').src = data.albumImageUrl;
                             
-                            // 2. Comprobar Scroll Seamless (Título)
                             checkAndSetScroll('title', data.title);
-                            
-                            // 3. Comprobar Scroll Seamless (Artista)
                             checkAndSetScroll('artist', data.artist);
 
                             widget.classList.add('active');
@@ -148,35 +131,25 @@
             } catch (e) { console.log("Reconectando..."); }
         }
 
-        // Función inteligente Seamless Scroll
         function checkAndSetScroll(type, text) {
             const container = document.getElementById(type + '-container');
             const mask = document.getElementById(type + '-mask');
             const repeatEl = document.getElementById(type + '-repeat');
             const textEl = document.getElementById(type);
             
-            // Limpiamos estado anterior
             container.classList.remove('should-scroll');
             repeatEl.style.display = 'none';
-            container.style.animationDuration = '10s'; 
 
-            // Medir el texto de forma real (con lowercase aplicado)
             const canvas = document.createElement("canvas");
             const context = canvas.getContext("2d");
-            const computedStyle = window.getComputedStyle(textEl);
-            context.font = computedStyle.font;
+            context.font = window.getComputedStyle(textEl).font;
             const textWidth = context.measureText(text.toLowerCase()).width;
             
-            const availableWidth = mask.offsetWidth;
-
-            // Si el texto es más ancho que el espacio disponible
-            if (textWidth > (availableWidth - 5)) {
+            if (textWidth > (mask.offsetWidth - 5)) {
                 container.classList.add('should-scroll');
                 repeatEl.innerText = text;
                 repeatEl.style.display = 'inline-block';
-                
-                // Ajustar duración según largo del texto
-                const duration = Math.max(9, textWidth / 22);
+                const duration = Math.max(8, textWidth / 20);
                 container.style.animationDuration = duration + 's';
             }
         }
