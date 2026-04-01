@@ -2,13 +2,13 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Spotify Overlay Ultra Smooth</title>
+    <title>Spotify Overlay Fast Sync</title>
     <style>
         body { 
             margin: 0; padding: 0; overflow: hidden; 
             font-family: 'Arial Black', sans-serif; 
             text-transform: lowercase; 
-            -webkit-font-smoothing: antialiased; /* Suavizado de fuente forzado */
+            -webkit-font-smoothing: antialiased;
         }
         
         #overlay {
@@ -21,7 +21,7 @@
             border-radius: 0 15px 15px 0; 
             box-shadow: 10px 0 30px rgba(0,0,0,0.8);
             box-sizing: border-box;
-            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+            transition: opacity 0.4s ease-out, transform 0.4s ease-out; /* Animación más rápida */
             opacity: 0;
             transform: translateX(-40px);
         }
@@ -51,28 +51,16 @@
             -webkit-mask-image: linear-gradient(to right, black 95%, transparent 100%);
         }
 
-        /* FIX: Forzamos que el wrapper no tenga límites de ancho para evitar re-renderizado */
         .scroll-wrapper { 
             display: inline-flex;
             width: max-content; 
-            will-change: transform; /* Pre-renderiza el movimiento */
+            will-change: transform;
         }
 
         .should-scroll { animation: marquee linear infinite; }
 
-        #artist { 
-            font-size: 20px; 
-            color: #2fb3a4; 
-            margin-bottom: 2px;
-            display: block;
-        }
-        
-        #title { 
-            font-size: 34px; 
-            color: #ffffff;
-            display: block;
-            line-height: 1.1;
-        }
+        #artist { font-size: 20px; color: #2fb3a4; margin-bottom: 2px; display: block; }
+        #title { font-size: 34px; color: #ffffff; display: block; line-height: 1.1; }
 
         @keyframes marquee {
             0% { transform: translateX(0); }
@@ -102,8 +90,12 @@
 
     <script>
         let lastTrack = "";
+        let isFetching = false;
 
         async function updateSpotify() {
+            if (isFetching) return; // Evita peticiones encimadas
+            isFetching = true;
+
             try {
                 const res = await fetch('/api/now-playing');
                 const data = await res.json();
@@ -111,20 +103,27 @@
 
                 if (data.isPlaying && !data.error) {
                     if (lastTrack !== data.title) {
+                        // Cambiamos el contenido más rápido
                         widget.classList.remove('active');
+                        
                         setTimeout(() => {
                             updateContent('title', data.title);
                             updateContent('artist', data.artist);
                             document.getElementById('album-art').src = data.albumImageUrl;
                             widget.classList.add('active');
-                        }, 600);
+                        }, 400); // Delay de transición reducido
+                        
                         lastTrack = data.title;
                     }
                 } else {
                     widget.classList.remove('active');
                     lastTrack = "";
                 }
-            } catch (e) { console.log("Error de conexión"); }
+            } catch (e) { 
+                console.log("Error de conexión"); 
+            } finally {
+                isFetching = false;
+            }
         }
 
         function updateContent(type, text) {
@@ -137,20 +136,19 @@
             repeat.style.display = 'none';
             main.innerText = text;
 
-            // FIX: Usamos un pequeño delay para asegurar que el navegador mida el texto final
             requestAnimationFrame(() => {
                 if (main.offsetWidth > (mask.offsetWidth - 5)) {
                     repeat.innerText = text;
                     repeat.style.display = 'inline-block';
                     wrapper.classList.add('should-scroll');
-                    // Velocidad constante sin importar el largo
-                    const duration = main.offsetWidth / 30; 
-                    wrapper.style.animationDuration = Math.max(8, duration) + 's';
+                    const duration = main.offsetWidth / 35; 
+                    wrapper.style.animationDuration = Math.max(7, duration) + 's';
                 }
             });
         }
 
-        setInterval(updateSpotify, 5000);
+        // REDUCIDO: Ahora chequea cada 1 segundo para cambios instantáneos
+        setInterval(updateSpotify, 1000); 
         updateSpotify();
     </script>
 </body>
