@@ -2,11 +2,12 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Spotify Overlay Fixed G Final</title>
+    <title>Spotify Overlay Comic Sans Edition</title>
     <style>
         body { 
             margin: 0; padding: 0; overflow: hidden; 
-            font-family: 'Arial Black', sans-serif; 
+            /* Cambio a Comic Sans con fallbacks estándar */
+            font-family: "Comic Sans MS", "Comic Sans", cursive; 
             text-transform: lowercase; 
             -webkit-font-smoothing: antialiased;
         }
@@ -54,7 +55,7 @@
             flex-direction: column;
             justify-content: center;
             padding: 0 20px;
-            /* AJUSTE: Más margen abajo para que la 'g' respire perfecto */
+            /* Mantenemos el padding inferior para proteger las letras con cola */
             padding-bottom: 12px; 
             transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease-in-out;
             opacity: 0;
@@ -68,23 +69,25 @@
         .artist-text { 
             font-size: 18px; 
             color: #2fb3a4; 
-            margin-bottom: 2px; 
+            margin-bottom: 0px; 
             display: block;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            font-weight: bold; /* Comic Sans se ve mejor con un poco de peso */
         }
         
         .title-text { 
-            font-size: 28px; 
+            font-size: 26px; /* Bajé un pelín el tamaño porque Comic Sans ocupa más ancho */
             color: #ffffff;
-            /* AJUSTE: Line-height de 1.3 para dar espacio extra a las colas de las letras */
-            line-height: 1.3; 
+            /* Line-height generoso para la 'g' y la 'y' */
+            line-height: 1.2; 
             display: -webkit-box;
             -webkit-line-clamp: 2; 
             -webkit-box-orient: vertical;  
             overflow: hidden;
             text-overflow: ellipsis;
+            font-weight: bold;
         }
 
     </style>
@@ -142,7 +145,7 @@
                     }, 600);
                     lastTrack = "";
                 }
-            } catch (e) { console.log("Error"); } finally {
+            } catch (e) { console.log("Error de conexión"); } finally {
                 isFetching = false;
             }
         }
