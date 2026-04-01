@@ -2,20 +2,20 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Spotify Overlay Compact</title>
+    <title>Spotify Overlay Intelligent Scroll</title>
     <style>
-        /* Estilos Base */
+        /* Estilos Base - Arial Black */
         body { margin: 0; padding: 0; overflow: hidden; font-family: 'Arial Black', sans-serif; }
         
-        /* Contenedor Rectangular Fijo (Estilo nowplaying.site) */
+        /* Contenedor Rectangular Totalmente Fijo */
         #overlay {
             display: flex;
             align-items: center;
             background: rgba(0, 0, 0, 0.85);
             color: white;
-            width: 350px;  /* Ancho Fijo */
-            height: 80px;  /* Alto Fijo */
-            padding: 10px;
+            width: 380px;  /* Ancho Fijo Estricto */
+            height: 90px;  /* Alto Fijo Estricto */
+            padding: 12px;
             border-radius: 12px;
             border-left: 6px solid #1DB954;
             box-sizing: border-box;
@@ -27,41 +27,61 @@
             transform: translateX(-20px);
         }
 
-        #overlay.active { 
-            opacity: 1; 
-            transform: translateX(0); 
-        }
+        #overlay.active { opacity: 1; transform: translateX(0); }
 
         /* Arte del Disco */
         #album-art { 
-            width: 60px; 
-            height: 60px; 
+            width: 65px; 
+            height: 65px; 
             border-radius: 8px; 
-            flex-shrink: 0; /* Que no se achique */
+            flex-shrink: 0; /* No se achica */
         }
 
-        /* Contenedor de Texto con Máscara para el Scroll */
-        .text-mask {
+        /* Contenedor de Información (Alineado a la izquierda) */
+        .info {
             flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            overflow: hidden;
+            width: calc(100% - 95px); /* Espacio restante para el texto */
+        }
+
+        /* --- Estilos para el Scroll Inteligente --- */
+        .scroll-mask {
+            width: 100%;
             overflow: hidden;
             white-space: nowrap;
-            mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+            mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
             -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
         }
 
-        .scroll-content {
+        /* Esta clase se añade por JS solo si el texto es largo */
+        .should-scroll {
             display: inline-block;
-            padding-left: 20px;
-            animation: marquee 12s linear infinite;
+            animation: marquee 10s linear infinite;
+            padding-left: 10px; /* Un poco de aire */
         }
 
-        #title { font-size: 15px; text-transform: uppercase; margin-right: 10px; }
-        #artist { font-size: 12px; opacity: 0.7; font-family: Arial, sans-serif; font-weight: bold; }
+        #title { 
+            font-size: 16px; 
+            text-transform: uppercase; 
+            display: block;
+            margin-bottom: 2px;
+        }
+        
+        #artist { 
+            font-size: 13px; 
+            opacity: 0.7; 
+            font-family: Arial, sans-serif; 
+            font-weight: bold; 
+            display: block;
+        }
 
-        /* Animación de Marquesina */
+        /* Animación de Marquesina (Scroll) */
         @keyframes marquee {
             0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
+            100% { transform: translateX(-50%); } /* Ajustado para el duplicado */
         }
     </style>
 </head>
@@ -69,12 +89,20 @@
 
     <div id="overlay">
         <img id="album-art" src="" alt="">
-        <div class="text-mask">
-            <div id="scroll-wrapper" class="scroll-content">
-                <span id="title"></span>
-                <span id="artist"></span>
-                <span id="title-repeat" style="margin-left: 40px;"></span>
-                <span id="artist-repeat"></span>
+        
+        <div class="info">
+            <div id="title-mask" class="scroll-mask">
+                <div id="title-container">
+                    <span id="title"></span>
+                    <span id="title-repeat" style="margin-left: 30px; display: none;"></span>
+                </div>
+            </div>
+            
+            <div id="artist-mask" class="scroll-mask">
+                <div id="artist-container">
+                    <span id="artist"></span>
+                    <span id="artist-repeat" style="margin-left: 30px; display: none;"></span>
+                </div>
             </div>
         </div>
     </div>
@@ -82,7 +110,7 @@
     <script>
         let lastTrack = "";
 
-        async function update() {
+        async function updateSpotify() {
             try {
                 const res = await fetch('/api/now-playing');
                 const data = await res.json();
@@ -93,16 +121,20 @@
                         widget.classList.remove('active');
                         
                         setTimeout(() => {
-                            const fullTitle = data.title;
-                            const fullArtist = " — " + data.artist;
-
-                            // Actualizamos original y repetición para el scroll infinito
-                            document.getElementById('title').innerText = fullTitle;
-                            document.getElementById('artist').innerText = fullArtist;
-                            document.getElementById('title-repeat').innerText = fullTitle;
-                            document.getElementById('artist-repeat').innerText = fullArtist;
+                            const titleEl = document.getElementById('title');
+                            const artistEl = document.getElementById('artist');
                             
+                            // 1. Asignar texto
+                            titleEl.innerText = data.title;
+                            artistEl.innerText = data.artist;
                             document.getElementById('album-art').src = data.albumImageUrl;
+                            
+                            // 2. Comprobar Scroll (Título)
+                            checkAndSetScroll('title', data.title);
+                            
+                            // 3. Comprobar Scroll (Artista)
+                            checkAndSetScroll('artist', data.artist);
+
                             widget.classList.add('active');
                         }, 600);
                         
@@ -115,8 +147,41 @@
             } catch (e) { console.log("Reconectando..."); }
         }
 
-        setInterval(update, 5000);
-        update();
+        // Función mágica que calcula si el texto entra o no
+        function checkAndSetScroll(type, text) {
+            const container = document.getElementById(type + '-container');
+            const mask = document.getElementById(type + '-mask');
+            const repeatEl = document.getElementById(type + '-repeat');
+            
+            // Limpiamos estado anterior
+            container.classList.remove('should-scroll');
+            repeatEl.style.display = 'none';
+            container.style.animationDuration = '10s'; // Reset duración
+
+            // Creamos un elemento temporal para medir el ancho real del texto
+            const canvas = document.createElement("canvas");
+            const context = canvas.getContext("2d");
+            // Obtenemos la fuente real cargada en el navegador
+            const computedStyle = window.getComputedStyle(document.getElementById(type));
+            context.font = computedStyle.font;
+            const textWidth = context.measureText(text).width;
+            
+            const availableWidth = mask.offsetWidth;
+
+            // Si el texto es más ancho que el espacio disponible (con un pequeño margen de 10px)
+            if (textWidth > (availableWidth - 10)) {
+                container.classList.add('should-scroll');
+                repeatEl.innerText = text;
+                repeatEl.style.display = 'inline-block';
+                
+                // Ajustar duración según largo del texto (más largo = más lento)
+                const duration = Math.max(8, textWidth / 25);
+                container.style.animationDuration = duration + 's';
+            }
+        }
+
+        setInterval(updateSpotify, 5000);
+        updateSpotify();
     </script>
 </body>
 </html>
