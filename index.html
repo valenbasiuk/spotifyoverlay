@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Spotify Overlay Fixed G</title>
+    <title>Spotify Overlay Fixed G Final</title>
     <style>
         body { 
             margin: 0; padding: 0; overflow: hidden; 
@@ -54,8 +54,8 @@
             flex-direction: column;
             justify-content: center;
             padding: 0 20px;
-            /* FIX: Padding inferior para que no se corte la 'g' */
-            padding-bottom: 8px; 
+            /* AJUSTE: Más margen abajo para que la 'g' respire perfecto */
+            padding-bottom: 12px; 
             transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease-in-out;
             opacity: 0;
             transform: translateX(50px);
@@ -78,8 +78,8 @@
         .title-text { 
             font-size: 28px; 
             color: #ffffff;
-            /* FIX: line-height ajustado para que bajen las colas de las letras */
-            line-height: 1.2; 
+            /* AJUSTE: Line-height de 1.3 para dar espacio extra a las colas de las letras */
+            line-height: 1.3; 
             display: -webkit-box;
             -webkit-line-clamp: 2; 
             -webkit-box-orient: vertical;  
